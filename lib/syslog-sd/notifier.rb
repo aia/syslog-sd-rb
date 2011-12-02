@@ -111,7 +111,7 @@ module SyslogSD
   private
     def notify_with_level(message_level, *args)
       notify_with_level!(message_level, *args)
-    rescue SocketError
+    rescue SocketError, SystemCallError
       raise unless self.rescue_network_errors
     rescue Exception => exception
       notify_with_level!(SyslogSD::UNKNOWN, exception)
