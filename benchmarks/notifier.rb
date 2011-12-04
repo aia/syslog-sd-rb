@@ -44,5 +44,5 @@ puts "Sending #{MESSAGES_COUNT} notifications...\n"
 tms = Benchmark.bm(25) do |b|
   b.report('short data') { notify(n, SHORT_HASH) }
   sleep(5)
-  b.report('short data') { notify(n, LONG_HASH) }
+  b.report(' long data') { notify(n, LONG_HASH) }
 end
