@@ -120,10 +120,10 @@ module SyslogSD
 
     def notify_with_level!(message_level, *args)
       return unless @enabled
-      extract_hash(*args)
-      @hash['level'] = message_level unless message_level.nil?
-      if @hash['level'] >= level
-        str = serialize_hash
+      hash = extract_hash(*args)
+      hash['level'] = message_level unless message_level.nil?
+      if hash['level'] >= level
+        str = serialize_hash(hash)
         @sender.send_datagram(str)
         str
       end
@@ -140,12 +140,12 @@ module SyslogSD
                        { 'short_message' => object.to_s }
                      end
 
-      @hash = default_options.merge(self.class.stringify_keys(args.merge(primary_data)))
-      convert_hoptoad_keys_to_graylog2
-      set_file_and_line if @collect_file_and_line
-      set_timestamp
-      check_presence_of_mandatory_attributes
-      @hash
+      hash = default_options.merge(self.class.stringify_keys(args.merge(primary_data)))
+      hash = convert_hoptoad_keys_to_graylog2(hash)
+      hash = set_file_and_line(hash) if @collect_file_and_line
+      hash = set_timestamp(hash)
+      check_presence_of_mandatory_attributes(hash)
+      hash
     end
 
     def self.extract_hash_from_exception(exception)
@@ -153,61 +153,64 @@ module SyslogSD
       { 'short_message' => "#{exception.class}: #{exception.message}", 'full_message' => "Backtrace:\n" + bt.join("\n") }
     end
 
-    # Converts Hoptoad-specific keys in +@hash+ to Graylog2-specific.
-    def convert_hoptoad_keys_to_graylog2
-      if @hash['short_message'].to_s.empty?
-        if @hash.has_key?('error_class') && @hash.has_key?('error_message')
-          @hash['short_message'] = @hash.delete('error_class') + ': ' + @hash.delete('error_message')
+    # Converts Hoptoad-specific keys in +hash+ to Graylog2-specific.
+    def convert_hoptoad_keys_to_graylog2(hash)
+      if hash['short_message'].to_s.empty?
+        if hash.has_key?('error_class') && hash.has_key?('error_message')
+          hash['short_message'] = hash.delete('error_class') + ': ' + hash.delete('error_message')
         end
       end
+      hash
     end
 
     CALLER_REGEXP = /^(.*):(\d+).*/
     LIB_PATTERN = File.join('lib', 'syslog-sd')
 
-    def set_file_and_line
+    def set_file_and_line(hash)
       stack = caller
       begin
         frame = stack.shift
       end while frame.include?(LIB_PATTERN)
       match = CALLER_REGEXP.match(frame)
-      @hash['file'] = match[1]
-      @hash['line'] = match[2].to_i
+      hash['file'] = match[1]
+      hash['line'] = match[2].to_i
+      hash
     end
 
-    def set_timestamp
-      @hash['timestamp'] = Time.now.utc.to_f if @hash['timestamp'].nil?
+    def set_timestamp(hash)
+      hash['timestamp'] = Time.now.utc.to_f if hash['timestamp'].nil?
+      hash
     end
 
-    def check_presence_of_mandatory_attributes
+    def check_presence_of_mandatory_attributes(hash)
       %w(short_message host).each do |attribute|
-        if @hash[attribute].to_s.empty?
+        if hash[attribute].to_s.empty?
           raise ArgumentError.new("#{attribute} is missing. Options short_message and host must be set.")
         end
       end
     end
 
-    def serialize_hash
-      raise ArgumentError.new("Hash is empty.") if @hash.nil? || @hash.empty?
+    def serialize_hash(hash)
+      raise ArgumentError.new("Hash is empty.") if hash.nil? || hash.empty?
 
-      @hash['level'] = @level_mapping[@hash['level']]
+      hash['level'] = @level_mapping[hash['level']]
 
-      prival = 128 + @hash.delete('level') # 128 = 16(local0) * 8
+      prival = 128 + hash.delete('level') # 128 = 16(local0) * 8
       t = Time.now.utc
       timestamp = timestamp_as_float ? t.to_f : t.strftime("%Y-%m-%dT%H:%M:%S.#{t.usec.to_s[0,3]}Z")
-      host = @hash.delete('host')
-      facility = @hash.delete('facility') || '-'
-      procid = @hash.delete('procid')
-      msgid = @hash.delete('msgid') || '-'
-      short_message = @hash.delete('short_message')
-      "<#{prival}>1 #{timestamp} #{host} #{facility} #{procid} #{msgid} #{serialize_sd} #{short_message}"
+      host = hash.delete('host')
+      facility = hash.delete('facility') || '-'
+      procid = hash.delete('procid')
+      msgid = hash.delete('msgid') || '-'
+      short_message = hash.delete('short_message')
+      "<#{prival}>1 #{timestamp} #{host} #{facility} #{procid} #{msgid} #{serialize_sd(hash)} #{short_message}"
     end
 
-    def serialize_sd
-      return '-' if @hash.empty?
+    def serialize_sd(hash)
+      return '-' if hash.empty?
 
       res = @sd_id
-      @hash.each_pair do |key, value|
+      hash.each_pair do |key, value|
         value = value.to_s.gsub(/([\\\]\"])/) { "\\#{$1}" }
         res += " #{key}=\"#{value}\""
       end

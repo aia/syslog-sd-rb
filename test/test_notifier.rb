@@ -143,8 +143,7 @@ class TestNotifier < Test::Unit::TestCase
 
       expected.each_pair do |key, value|
         should "be as #{value}" do
-          @notifier.instance_variable_set('@hash', key)
-          assert_equal value, @notifier.__send__(:serialize_hash)
+          assert_equal value, @notifier.__send__(:serialize_hash, key)
         end
       end
 
@@ -153,8 +152,7 @@ class TestNotifier < Test::Unit::TestCase
         hash = { 'short_message' => 'message', 'level' => SyslogSD::WARN, 'host' => 'host', 'facility' => 'facility', 'procid' => 123,
                  'msgid' => 'msgid', 'user_id' => 123 }
         expected = '<132>1 1274011994.0 host facility 123 msgid [_@37797 user_id="123"] message'
-        @notifier.instance_variable_set('@hash', hash)
-        assert_equal expected, @notifier.__send__(:serialize_hash)
+        assert_equal expected, @notifier.__send__(:serialize_hash, hash)
       end
 
       teardown do
