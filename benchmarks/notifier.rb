@@ -31,7 +31,6 @@ def notify(n, hash)
       (MESSAGES_COUNT / THREADS_COUNT).times { n.notify!(hash) }
     end
   end
-  raise threads.count.to_s
   threads.each { |t| t.join }
 end
 
