@@ -10,21 +10,23 @@ module SyslogSD
     end
 
     def addresses
-      @addresses
+      @mutex.synchronize do
+        @i = 0
+        @addresses
+      end
     end
 
     def addresses=(addrs)
       @mutex.synchronize do
-        @addresses = addrs
         @i = 0
-        @addresses_length = addrs.length
+        @addresses = addrs
       end
     end
 
     def send_datagram(datagram)
       # not thread-safe, but we don't care if round-robin algo fails sometimes
       host, port = @addresses[@i]
-      @i = (@i + 1) % @addresses_length
+      @i = (@i + 1) % @addresses.length
       @socket.send(datagram, 0, host, port)
     end
   end
