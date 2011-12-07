@@ -141,7 +141,7 @@ module SyslogSD
                      end
 
       hash = default_options.merge(self.class.stringify_keys(args.merge(primary_data)))
-      hash = convert_hoptoad_keys_to_graylog2(hash)
+      hash = convert_airbrake_keys_to_graylog2(hash)
       hash = set_file_and_line(hash) if @collect_file_and_line
       hash = set_timestamp(hash)
       check_presence_of_mandatory_attributes(hash)
@@ -150,14 +150,17 @@ module SyslogSD
 
     def self.extract_hash_from_exception(exception)
       bt = exception.backtrace || ["Backtrace is not available."]
-      { 'short_message' => "#{exception.class}: #{exception.message}", 'full_message' => "Backtrace:\n" + bt.join("\n") }
+      error_class = exception.class.name
+      error_message = exception.message
+      { 'short_message' => "#{error_class}: #{error_message}", 'full_message' => "Backtrace:\n" + bt.join("\n"),
+        'error_class' => error_class, 'error_message' => error_message }
     end
 
-    # Converts Hoptoad-specific keys in +hash+ to Graylog2-specific.
-    def convert_hoptoad_keys_to_graylog2(hash)
+    # Converts Airbrake-specific keys in +hash+ to Graylog2-specific.
+    def convert_airbrake_keys_to_graylog2(hash)
       if hash['short_message'].to_s.empty?
         if hash.has_key?('error_class') && hash.has_key?('error_message')
-          hash['short_message'] = hash.delete('error_class') + ': ' + hash.delete('error_message')
+          hash['short_message'] = hash['error_class'] + ': ' + hash['error_message']
         end
       end
       hash

@@ -49,6 +49,8 @@ class TestNotifier < Test::Unit::TestCase
         e.set_backtrace(caller)
         hash = @notifier.__send__(:extract_hash, e)
         assert_equal 'RuntimeError: message', hash['short_message']
+        assert_equal 'RuntimeError', hash['error_class']
+        assert_equal 'message', hash['error_message']
         assert_match /Backtrace/, hash['full_message']
         assert_equal SyslogSD::ERROR, hash['level']
       end
@@ -63,6 +65,8 @@ class TestNotifier < Test::Unit::TestCase
         e, h = RuntimeError.new('message'), {'param' => 1, 'level' => SyslogSD::FATAL, 'short_message' => 'will be hidden by exception'}
         hash = @notifier.__send__(:extract_hash, e, h)
         assert_equal 'RuntimeError: message', hash['short_message']
+        assert_equal 'RuntimeError', hash['error_class']
+        assert_equal 'message', hash['error_message']
         assert_equal SyslogSD::FATAL, hash['level']
         assert_equal 1, hash['param']
       end
@@ -96,10 +100,12 @@ class TestNotifier < Test::Unit::TestCase
         assert_equal 'message', hash['short_message']
       end
 
-      should "be compatible with HoptoadNotifier" do
-        # https://github.com/thoughtbot/hoptoad_notifier/blob/master/README.rdoc, section Going beyond exceptions
+      should "be compatible with Airbrake" do
+        # https://github.com/airbrake/airbrake/blob/master/README.md, section Going beyond exceptions
         hash = @notifier.__send__(:extract_hash, :error_class => 'Class', :error_message => 'Message')
         assert_equal 'Class: Message', hash['short_message']
+        assert_equal 'Class',   hash['error_class']
+        assert_equal 'Message', hash['error_message']
       end
 
       should "set file and line" do
