@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "syslog-sd"
-  s.version = "1.3.2"
+  s.version = "1.4.0.beta1"
 
-  s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
+  s.required_rubygems_version = Gem::Requirement.new("> 1.3.1") if s.respond_to? :required_rubygems_version=
   s.authors = ["Alexey Palazhchenko", "Lennart Koopmann"]
-  s.date = "2011-12-13"
+  s.date = "2012-01-17"
   s.description = "Super-Duper library to send syslog messages over UDP to logging server such as Graylog2. Supports Structured Data elements as defined by RFC 5424."
   s.email = "alexey.palazhchenko@gmail.com"
   s.extra_rdoc_files = [
@@ -40,7 +40,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/Graylog2/syslog-sd-rb"
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.12"
+  s.rubygems_version = "1.8.15"
   s.summary = "Library to send syslog messages over UDP to logging server such as Graylog2. Supports Structured Data elements as defined by RFC 5424."
 
   if s.respond_to? :specification_version then
